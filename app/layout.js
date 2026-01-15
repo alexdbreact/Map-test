@@ -1,16 +1,16 @@
-import { Inter } from 'next/font/google'
+import { Cairo } from 'next/font/google'
 import './globals.css'
 
-const inter = Inter({ subsets: ['latin'] })
+const inter = Cairo({ subsets: ['latin', 'arabic'] })
 
 export const metadata = {
-  title: 'Urban Planning Presentation',
-  description: 'Interactive presentation with maps and locations',
+  title: 'Alex Assets',
+  description: 'عرض تفاعلي مع خرائط لعرض أُصول الإسكندرية',
 }
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
+    <html lang="ar" dir="rtl">
       <head>
         <link 
           rel="stylesheet" 

@@ -1,329 +1,494 @@
 "use client";
 
-import { useState, useEffect } from 'react';
-import dynamic from 'next/dynamic';
-import Menu from './components/Menu';
-import SlideContent from './components/SlideContent';
+import { useState, useEffect } from "react";
+import dynamic from "next/dynamic";
+import Menu from "./components/Menu";
+import SlideContent from "./components/SlideContent";
+import { Satellite, Eye, Maximize2, Minimize2, Lock, User, LogOut } from "lucide-react";
+import { locations, baseColors } from "./data/locations";
+import { optionColors, optionLabels, uiText } from "./data/constants";
+import './globals.css'
 
-// Dynamically import all Leaflet components with no SSR
-const MapWithNoSSR = dynamic(() => import('./components/MapComponent'), {
+
+/* ================= MAP (NO SSR) ================= */
+const MapWithNoSSR = dynamic(() => import("./components/MapComponent"), {
   ssr: false,
   loading: () => (
     <div className="h-full w-full flex items-center justify-center bg-gray-100 dark:bg-gray-900 rounded-2xl">
       <div className="text-center">
         <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mb-2"></div>
-        <p className="text-gray-600 dark:text-gray-400">Loading map...</p>
+        <p className="text-gray-600 dark:text-gray-400">
+          جاري تحميل الخريطة...
+        </p>
       </div>
     </div>
-  )
+  ),
 });
 
-// Define 10 locations/districts in Alexandria, Egypt with polygon coordinates
-const locations = [
-  { 
-    id: 1, 
-    name: "Downtown Alexandria", 
-    center: { lat: 31.1978, lng: 29.8925 }, 
-    color: "#3B82F6", 
-    description: "Heart of Alexandria with historic buildings and commercial centers",
-    polygon: [
-      { lat: 31.1950, lng: 29.8900 },
-      { lat: 31.2000, lng: 29.8900 },
-      { lat: 31.1970, lng: 29.8920 },
-      { lat: 31.1980, lng: 29.8910 },
-      { lat: 31.2000, lng: 29.8950 },
-      { lat: 31.1950, lng: 29.8950 },
-      { lat: 31.1950, lng: 29.8900 }
-    ]
-  },
-  { 
-    id: 2, 
-    name: "Montaza District", 
-    center: { lat: 31.2892, lng: 30.0089 }, 
-    color: "#10B981", 
-    description: "Royal gardens, palaces, and upscale residential areas",
-    polygon: [
-      { lat: 31.2800, lng: 30.0000 },
-      { lat: 31.2950, lng: 30.0000 },
-      { lat: 31.2950, lng: 30.0150 },
-      { lat: 31.2800, lng: 30.0150 },
-      { lat: 31.2800, lng: 30.0000 }
-    ]
-  },
-  { 
-    id: 3, 
-    name: "Stanley Bay", 
-    center: { lat: 31.2497, lng: 29.9661 }, 
-    color: "#8B5CF6", 
-    description: "Scenic bay with bridges, cafes, and waterfront promenade",
-    polygon: [
-      { lat: 31.2450, lng: 29.9600 },
-      { lat: 31.2550, lng: 29.9600 },
-      { lat: 31.2550, lng: 29.9700 },
-      { lat: 31.2450, lng: 29.9700 },
-      { lat: 31.2450, lng: 29.9600 }
-    ]
-  },
-  { 
-    id: 4, 
-    name: "Shatby Medical District", 
-    center: { lat: 31.2050, lng: 29.9083 }, 
-    color: "#EF4444", 
-    description: "University hospitals and medical facilities area",
-    polygon: [
-      { lat: 31.2000, lng: 29.9030 },
-      { lat: 31.2100, lng: 29.9030 },
-      { lat: 31.2100, lng: 29.9130 },
-      { lat: 31.2000, lng: 29.9130 },
-      { lat: 31.2000, lng: 29.9030 }
-    ]
-  },
-  { 
-    id: 5, 
-    name: "Sporting District", 
-    center: { lat: 31.2333, lng: 29.9500 }, 
-    color: "#06B6D4", 
-    description: "Residential area with sporting clubs and facilities",
-    polygon: [
-      { lat: 31.2280, lng: 29.9450 },
-      { lat: 31.2380, lng: 29.9450 },
-      { lat: 31.2380, lng: 29.9550 },
-      { lat: 31.2280, lng: 29.9550 },
-      { lat: 31.2280, lng: 29.9450 }
-    ]
-  },
-  { 
-    id: 6, 
-    name: "Smouha", 
-    center: { lat: 31.2089, lng: 29.9564 }, 
-    color: "#F59E0B", 
-    description: "Modern residential district with gardens and commercial centers",
-    polygon: [
-      { lat: 31.2030, lng: 29.9510 },
-      { lat: 31.2130, lng: 29.9510 },
-      { lat: 31.2130, lng: 29.9610 },
-      { lat: 31.2030, lng: 29.9610 },
-      { lat: 31.2030, lng: 29.9510 }
-    ]
-  },
-  { 
-    id: 7, 
-    name: "Miami District", 
-    center: { lat: 31.2667, lng: 29.9833 }, 
-    color: "#EC4899", 
-    description: "Beachfront area with resorts and entertainment venues",
-    polygon: [
-      { lat: 31.2600, lng: 29.9780 },
-      { lat: 31.2720, lng: 29.9780 },
-      { lat: 31.2720, lng: 29.9880 },
-      { lat: 31.2600, lng: 29.9880 },
-      { lat: 31.2600, lng: 29.9780 }
-    ]
-  },
-  { 
-    id: 8, 
-    name: "Gleem District", 
-    center: { lat: 31.2550, lng: 29.9750 }, 
-    color: "#84CC16", 
-    description: "Upscale residential neighborhood near the beach",
-    polygon: [
-      { lat: 31.2500, lng: 29.9700 },
-      { lat: 31.2600, lng: 29.9700 },
-      { lat: 31.2600, lng: 29.9800 },
-      { lat: 31.2500, lng: 29.9800 },
-      { lat: 31.2500, lng: 29.9700 }
-    ]
-  },
-  { 
-    id: 9, 
-    name: "Sidi Gaber", 
-    center: { lat: 31.2583, lng: 29.9667 }, 
-    color: "#6366F1", 
-    description: "Commercial and transportation hub with train station",
-    polygon: [
-      { lat: 31.2530, lng: 29.9610 },
-      { lat: 31.2630, lng: 29.9610 },
-      { lat: 31.2630, lng: 29.9710 },
-      { lat: 31.2530, lng: 29.9710 },
-      { lat: 31.2530, lng: 29.9610 }
-    ]
-  },
-  { 
-    id: 10, 
-    name: "Borg El Arab", 
-    center: { lat: 30.8667, lng: 29.5667 }, 
-    color: "#F97316", 
-    description: "Industrial city and new urban communities",
-    polygon: [
-      { lat: 30.8600, lng: 29.5600 },
-      { lat: 30.8730, lng: 29.5600 },
-      { lat: 30.8730, lng: 29.5730 },
-      { lat: 30.8600, lng: 29.5730 },
-      { lat: 30.8600, lng: 29.5600 }
-    ]
+/* ================= SLIDES ================= */
+const slides = locations.map(location => ({
+  id: location.id,
+  title: location.name,
+  color: location.color,
+  description: location.description,
+  stats: {
+    population: location.population,
+    area: location.area,
+    established: location.established,
+    projects: location.projects,
+    garden: location.garden,
+    another: location.another
   }
-];
-
-// Slide data - each slide corresponds to a district
-const slides = [
-  { id: 1, title: "Downtown Development", description: "Revitalization of historic downtown Alexandria with preservation of heritage buildings and modernization of infrastructure." },
-  { id: 2, title: "Montaza Preservation", description: "Conservation of royal gardens and palaces while developing sustainable tourism facilities." },
-  { id: 3, title: "Stanley Bay Tourism", description: "Development of waterfront tourism infrastructure including walkways, cafes, and entertainment venues." },
-  { id: 4, title: "Medical Hub Expansion", description: "Expansion of medical facilities and research centers in the Shatby district." },
-  { id: 5, title: "Sports Infrastructure", description: "Development of public sports facilities and clubs in the Sporting district." },
-  { id: 6, title: "Residential Modernization", description: "Urban renewal and modernization of residential areas in Smouha district." },
-  { id: 7, title: "Tourism & Entertainment", description: "Development of beachfront resorts and entertainment facilities in Miami district." },
-  { id: 8, title: "Upscale Residential", description: "Development of luxury residential communities in Gleem district." },
-  { id: 9, title: "Transportation Hub", description: "Modernization of transportation infrastructure in Sidi Gaber commercial district." },
-  { id: 10, title: "Industrial Growth", description: "Expansion of industrial zones and new urban communities in Borg El Arab." }
-];
+}));
 
 export default function Home() {
-  const [activeSlide, setActiveSlide] = useState(1);
-  const [selectedLocations, setSelectedLocations] = useState([1]);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [loginError, setLoginError] = useState("");
+  const [activeSlide, setActiveSlide] = useState(2);
+  const [selectedLocations, setSelectedLocations] = useState([2]);
   const [isDarkMode, setIsDarkMode] = useState(false);
-  const [mapCenter, setMapCenter] = useState([31.2000, 29.9000]); // Center of Alexandria
+  const [isSatelliteMode, setIsSatelliteMode] = useState(false);
+  const [showAllMarkers, setShowAllMarkers] = useState(false);
+  const [isFullscreenMap, setIsFullscreenMap] = useState(false);
+  const [mapCenter, setMapCenter] = useState([31.2000, 29.9000]);
   const [mapZoom, setMapZoom] = useState(12);
   const [mounted, setMounted] = useState(false);
-  const [activePolygon, setActivePolygon] = useState(null);
+  
+  // State for option markers
+  const [activeOption, setActiveOption] = useState(null);
+  const [optionMarkers, setOptionMarkers] = useState([]);
+  const [selectedDistrict, setSelectedDistrict] = useState(2);
+  
+  // State for selected marker
+  const [selectedMarker, setSelectedMarker] = useState(null);
 
-  // Wait for component to mount to avoid hydration mismatch
+  /* ================= INIT ================= */
   useEffect(() => {
     setMounted(true);
     
-    // Check for saved theme or system preference
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-      setIsDarkMode(true);
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
+    // Check if user is already logged in from localStorage
+    const savedLogin = localStorage.getItem("isLoggedIn");
+    if (savedLogin === "true") {
+      setIsLoggedIn(true);
     }
+    
+    const savedTheme = localStorage.getItem("theme") || "light";
+    if (savedTheme === "dark") {
+      setIsDarkMode(true);
+      document.documentElement.classList.add("dark");
+    }
+
+    document.documentElement.dir = "rtl";
+    document.documentElement.lang = "ar";
   }, []);
 
-  // Toggle dark/light mode
-  const toggleDarkMode = () => {
-    const newMode = !isDarkMode;
-    setIsDarkMode(newMode);
-    if (newMode) {
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
+  /* ================= LOGIN FUNCTIONS ================= */
+  const handleLogin = (e) => {
+    e.preventDefault();
+    setLoginError("");
+
+    // Static credentials
+    const correctUsername = "Admin";
+    const correctPassword = "5685";
+
+    if (username === correctUsername && password === correctPassword) {
+      setIsLoggedIn(true);
+      localStorage.setItem("isLoggedIn", "true");
+      localStorage.setItem("username", username);
     } else {
-      document.documentElement.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
+      setLoginError("اسم المستخدم أو كلمة المرور غير صحيحة");
     }
   };
 
-  // Handle location selection
+  const handleLogout = () => {
+    setIsLoggedIn(false);
+    setUsername("");
+    setPassword("");
+    localStorage.removeItem("isLoggedIn");
+    localStorage.removeItem("username");
+  };
+
+  /* ================= TOGGLES ================= */
+  const toggleDarkMode = () => {
+    const v = !isDarkMode;
+    setIsDarkMode(v);
+    document.documentElement.classList.toggle("dark", v);
+    localStorage.setItem("theme", v ? "dark" : "light");
+  };
+
+  const toggleSatelliteMode = () => {
+    setIsSatelliteMode(!isSatelliteMode);
+  };
+
+  const toggleFullscreenMap = () => {
+    setIsFullscreenMap(!isFullscreenMap);
+  };
+
+  const handleShowAll = () => {
+    const allLocationIds = locations.map(loc => loc.id);
+    setSelectedLocations(allLocationIds);
+    setShowAllMarkers(true);
+    setActiveOption(null);
+    setOptionMarkers([]);
+    setSelectedMarker(null);
+    setMapCenter([31.2000, 29.9000]);
+    setMapZoom(11);
+    setActiveSlide(1);
+  };
+
+  /* ================= HANDLERS ================= */
   const handleLocationSelect = (locationId) => {
-    setSelectedLocations(prev => {
-      if (prev.includes(locationId)) {
-        return prev.filter(id => id !== locationId);
-      } else {
-        return [...prev, locationId];
-      }
-    });
-    
-    // Center map on selected location
-    const location = locations.find(loc => loc.id === locationId);
-    if (location && location.center) {
+    setSelectedLocations([locationId]);
+    setShowAllMarkers(false);
+    setActiveOption(null);
+    setOptionMarkers([]);
+    setSelectedMarker(null);
+    const location = locations.find((l) => l.id === locationId);
+    if (location) {
       setMapCenter([location.center.lat, location.center.lng]);
       setMapZoom(14);
-      setActivePolygon(location.polygon);
+      setSelectedDistrict(locationId);
+      setActiveSlide(locationId);
     }
   };
 
-  // Handle slide change
-  const handleSlideChange = (slideId) => {
-    setActiveSlide(slideId);
-    // Automatically select corresponding location
-    handleLocationSelect(slideId);
+  // Handle option selection
+  const handleOptionSelect = (districtId, optionId) => {
+    const location = locations.find((l) => l.id === districtId);
+    if (location && location.optionMarkers && location.optionMarkers[optionId]) {
+      setActiveOption(optionId);
+      setOptionMarkers(location.optionMarkers[optionId]);
+      setSelectedDistrict(districtId);
+      setActiveSlide(districtId);
+      setSelectedLocations([districtId]);
+      setShowAllMarkers(false);
+      setSelectedMarker(null);
+      
+      // Center map on the first marker of the option
+      if (location.optionMarkers[optionId].length > 0) {
+        const firstMarker = location.optionMarkers[optionId][0];
+        setMapCenter([firstMarker.lat, firstMarker.lng]);
+        setMapZoom(15);
+      }
+    }
   };
 
-  // Get selected location data
-  const getSelectedLocationsData = () => {
-    return locations.filter(loc => selectedLocations.includes(loc.id));
+  // Handle marker selection
+  const handleMarkerSelect = (marker) => {
+    setSelectedMarker(marker);
+    
+    // Center map on the selected marker
+    setMapCenter([marker.lat, marker.lng]);
+    setMapZoom(16);
   };
 
-  // Convert polygon objects to arrays for Leaflet
-  const getPolygonArray = (polygon) => {
-    if (!polygon) return [];
-    return polygon.map(point => [point.lat, point.lng]);
-  };
-
-  // Don't render anything on server to avoid hydration mismatch
   if (!mounted) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Loading Alexandria Presentation...</p>
+        <p className="text-gray-600 dark:text-gray-400">
+          {uiText.loading}
+        </p>
+      </div>
+    );
+  }
+
+  /* ================= LOGIN PAGE ================= */
+  if (!isLoggedIn) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4 mylog">
+        <div className="w-full max-w-md">
+          {/* Login Card */}
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl overflow-hidden border border-gray-200 dark:border-gray-700">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-6 text-center">
+              <div className="flex items-center justify-center gap-3 mb-3">
+                <Lock className="w-10 h-10 text-white" />
+                <h1 className="text-2xl font-bold text-white">نظام إدارة أصول الإسكندرية</h1>
+              </div>
+              <p className="text-blue-100 text-sm">
+                يرجى تسجيل الدخول للوصول إلى لوحة التحكم
+              </p>
+            </div>
+
+            {/* Login Form */}
+            <div className="p-8">
+              <form onSubmit={handleLogin}>
+                {/* Username Field */}
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    اسم المستخدم
+                  </label>
+                  <div className="relative">
+                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                      <User className="w-5 h-5 text-gray-400" />
+                    </div>
+                    <input
+                      type="text"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
+                      className="w-full pl-4 pr-12 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white transition-all duration-200"
+                      placeholder="أدخل اسم المستخدم"
+                      required
+                      dir="rtl"
+                    />
+                  </div>
+                </div>
+
+                {/* Password Field */}
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    كلمة المرور
+                  </label>
+                  <div className="relative">
+                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                      <Lock className="w-5 h-5 text-gray-400" />
+                    </div>
+                    <input
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="w-full pl-4 pr-12 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white transition-all duration-200"
+                      placeholder="أدخل كلمة المرور"
+                      required
+                      dir="rtl"
+                    />
+                  </div>
+                </div>
+
+                {/* Error Message */}
+                {loginError && (
+                  <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl">
+                    <p className="text-red-600 dark:text-red-400 text-sm text-center">
+                      {loginError}
+                    </p>
+                  </div>
+                )}
+
+                {/* Login Button */}
+                <button
+                  type="submit"
+                  className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold py-3 px-4 rounded-xl transition-all duration-200 transform hover:scale-[1.02] shadow-lg"
+                >
+                  تسجيل الدخول
+                </button>
+
+                {/* Demo Credentials */}
+                <div className="mt-6 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl">
+                  <p className="text-blue-700 dark:text-blue-300 text-sm text-center">
+                    <span className="font-bold">بيانات الدخول:</span>  يرجى الحفاظ على بيانات الدخول في مكان آمن
+                  </p>
+                </div>
+              </form>
+
+              {/* Footer */}
+              <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700 text-center">
+                <p className="text-xs text-gray-500 dark:text-gray-400 font-extrabold">
+                  نظام عرض حصر الأصول الخاصة لمحافظة الإسكندرية © 2026
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Security Note */}
+          <div className="mt-4 text-center">
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+             
+            </p>
+          </div>
         </div>
       </div>
     );
   }
 
+  /* ================= MAIN APP ================= */
   return (
-    <div className={`min-h-screen transition-colors duration-300 ${isDarkMode ? 'dark bg-gray-900' : 'bg-gray-50'}`}>
-      <div className="flex flex-col lg:flex-row h-screen">
-        {/* Main Content Area */}
-        <div className="flex-1 flex flex-col lg:flex-row p-4 lg:p-6 gap-4 lg:gap-6">
-          
-          {/* Slide Content */}
-          <div className="flex-1 flex flex-col">
-            <div className="flex justify-between items-center mb-4 lg:mb-6">
-              <div>
-                <h1 className={`text-2xl lg:text-3xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                  Alexandria Urban Development
-                </h1>
-                <p className={`text-sm mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                  Presentation of district development plans
-                </p>
-              </div>
-              <button
-                onClick={toggleDarkMode}
-                className={`p-2 rounded-lg transition-all duration-300 ${
-                  isDarkMode 
-                    ? 'bg-gray-800 hover:bg-gray-700 text-yellow-300' 
-                    : 'bg-white hover:bg-gray-100 text-gray-800 shadow-md'
-                }`}
-              >
-                {isDarkMode ? '☀️ Light' : '🌙 Dark'}
-              </button>
+    <div className={`min-h-screen transition-colors duration-300 ${isDarkMode ? "dark bg-gray-900" : "bg-gray-50"}`}>
+      {/* Header */}
+      <div className="p-4 lg:p-6 border-b border-gray-200 dark:border-gray-800">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div>
+              <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">
+                {uiText.title}
+              </h1>
+              <p className="text-sm mt-1 text-gray-600 dark:text-gray-400">
+                {uiText.subtitle}
+              </p>
             </div>
-
-            <SlideContent 
-              slide={slides.find(s => s.id === activeSlide)}
-              isDarkMode={isDarkMode}
-            />
+            
+            {/* Welcome Message */}
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/30 rounded-full">
+              <User className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+              <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
+                مرحباً، {localStorage.getItem("username")}
+              </span>
+            </div>
           </div>
 
-          {/* Map Container */}
-          <div className="flex-1 rounded-2xl overflow-hidden shadow-2xl border-2 border-white/20">
+          <div className="flex gap-2">
+            <button
+              onClick={handleShowAll}
+              className={`px-3 py-2 rounded-lg flex items-center gap-2 transition-all duration-300 ${
+                showAllMarkers
+                  ? 'bg-blue-600 text-white'
+                  : isDarkMode 
+                    ? 'bg-gray-800 hover:bg-gray-700 text-white' 
+                    : 'bg-white hover:bg-gray-100 text-gray-900'
+              } shadow-md border ${
+                showAllMarkers
+                  ? 'border-blue-500'
+                  : isDarkMode ? 'border-gray-700' : 'border-gray-200'
+              }`}
+            >
+              <Eye className="h-4 w-4" />
+              <span className="font-medium text-sm">عرض الكل</span>
+            </button>
+
+            <button
+              onClick={toggleSatelliteMode}
+              className={`px-3 py-2 rounded-lg flex items-center gap-2 transition-all duration-300 ${
+                isSatelliteMode 
+                  ? 'bg-blue-600 text-white' 
+                  : isDarkMode 
+                    ? 'bg-gray-800 hover:bg-gray-700 text-white' 
+                    : 'bg-white hover:bg-gray-100 text-gray-900'
+              } shadow-md border ${
+                isSatelliteMode 
+                  ? 'border-blue-500' 
+                  : isDarkMode 
+                    ? 'border-gray-700' 
+                    : 'border-gray-200'
+              }`}
+            >
+              <Satellite className="h-4 w-4" />
+              <span className="font-medium text-sm">
+                {isSatelliteMode ? "عادي" : "أقمار"}
+              </span>
+            </button>
+
+            <button
+              onClick={toggleDarkMode}
+              className={`px-3 py-2 rounded-lg flex items-center gap-2 transition-all duration-300 ${
+                isDarkMode 
+                  ? 'bg-gray-800 hover:bg-gray-700 text-white' 
+                  : 'bg-white hover:bg-gray-100 text-gray-900'
+              } shadow-md border ${
+                isDarkMode ? 'border-gray-700' : 'border-gray-200'
+              }`}
+            >
+              {isDarkMode ? (
+                <>
+                  <span className="text-lg">☀️</span>
+                  <span className="font-medium text-sm">فاتح</span>
+                </>
+              ) : (
+                <>
+                  <span className="text-lg">🌙</span>
+                  <span className="font-medium text-sm">داكن</span>
+                </>
+              )}
+            </button>
+
+            {/* Logout Button */}
+            <button
+              onClick={handleLogout}
+              className="px-3 py-2 rounded-lg flex items-center gap-2 transition-all duration-300 bg-red-50 hover:bg-red-100 dark:bg-red-900/30 dark:hover:bg-red-900/50 text-red-600 dark:text-red-400 shadow-md border border-red-200 dark:border-red-800"
+            >
+              <LogOut className="h-4 w-4" />
+              <span className="font-medium text-sm">تسجيل خروج</span>
+            </button>
+          </div>
+        </div>
+      </div> 
+
+      {/* Main Content */}
+      <div className="flex flex-col lg:flex-row h-[calc(100vh-80px)]">
+        {/* Right: Menu - Hidden in fullscreen mode */}
+        {!isFullscreenMap && (
+          <div dir="ltr" className="md:w-2/5 w-full border-l border-gray-200 dark:border-gray-800 overflow-y-auto">
+            <Menu
+              slides={slides}
+              activeSlide={activeSlide}
+              onSlideChange={(id) => {
+                setActiveSlide(id);
+                handleLocationSelect(id);
+              }}
+              onOptionSelect={handleOptionSelect}
+              isDarkMode={isDarkMode}
+              colors={baseColors}
+              selectedOption={activeOption}
+              optionColors={optionColors}
+              optionLabels={optionLabels}
+              locations={locations}
+            />
+          </div>
+        )}
+
+        {/* Middle: Map */}
+        <div className={`${isFullscreenMap ? 'w-full' : 'md:w-2.5/5 w-full'} relative`}>
+          <div className="h-full rounded-2xl overflow-hidden shadow-2xl border-2 border-white/20">
             <MapWithNoSSR
               isDarkMode={isDarkMode}
+              isSatelliteMode={isSatelliteMode}
               locations={locations}
               selectedLocations={selectedLocations}
               mapCenter={mapCenter}
               mapZoom={mapZoom}
-              getSelectedLocationsData={getSelectedLocationsData}
-              activePolygon={activePolygon ? getPolygonArray(activePolygon) : null}
+              getSelectedLocationsData={() =>
+                locations.filter((l) => selectedLocations.includes(l.id))
+              }
+              activeOption={activeOption}
+              optionMarkers={optionMarkers}
+              optionColors={optionColors}
+              showAllMarkers={showAllMarkers}
               handleLocationSelect={handleLocationSelect}
-              getPolygonArray={getPolygonArray}
+              selectedDistrict={selectedDistrict}
+              onMarkerClick={handleMarkerSelect}
+              selectedMarker={selectedMarker}
             />
           </div>
+          
+          {/* Fullscreen Map Button */}
+          <button
+            onClick={toggleFullscreenMap}
+            className={`absolute top-4 left-4 z-[1000] p-2 rounded-lg flex items-center gap-2 transition-all duration-300 ${
+              isDarkMode 
+                ? 'bg-gray-900/90 hover:bg-gray-800 text-white' 
+                : 'bg-white/90 hover:bg-white text-gray-900'
+            } shadow-lg border ${
+              isDarkMode ? 'border-gray-700' : 'border-gray-200'
+            }`}
+          >
+            {isFullscreenMap ? (
+              <>
+                <Minimize2 className="h-4 w-4" />
+                <span className="text-sm font-medium">تصغير</span>
+              </>
+            ) : (
+              <>
+                <Maximize2 className="h-4 w-4" />
+                <span className="text-sm font-medium">تكبير الخريطة</span>
+              </>
+            )}
+          </button>
         </div>
 
-        {/* Side Menu */}
-        <Menu 
-          slides={slides}
-          locations={locations}
-          activeSlide={activeSlide}
-          selectedLocations={selectedLocations}
-          onSlideChange={handleSlideChange}
-          onLocationSelect={handleLocationSelect}
-          isDarkMode={isDarkMode}
-        />
+        {/* Left: Slide Content - Hidden in fullscreen mode */}
+        {!isFullscreenMap && (
+          <div className="md:w-0.5/5 w-full p-4 lg:p-6 border-r border-gray-200 dark:border-gray-800 overflow-y-auto">
+            <SlideContent
+              slide={slides.find((s) => s.id === activeSlide)}
+              isDarkMode={isDarkMode}
+              selectedOption={activeOption}
+              optionColors={optionColors}
+              optionLabels={optionLabels}
+              selectedMarker={selectedMarker}
+              setSelectedMarker={setSelectedMarker}
+            />
+          </div>
+        )}
       </div>
     </div>
   );
